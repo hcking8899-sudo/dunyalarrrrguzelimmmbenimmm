@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dünyalar Güzelim</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; margin: 0; padding: 0; }
+        body { background: #000; color: #fff; font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto; overflow-x: hidden; touch-action: manipulation; }
+
+        /* GİRİŞ EKRANI */
+        #entry { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: fixed; width: 100%; top: 0; z-index: 999; background: #000; transition: transform 0.6s ease-in-out; }
+        .fp-wrapper { width: 120px; height: 120px; border: 2px solid #ff0000; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+        .scan-line { position: absolute; width: 80%; height: 3px; background: #ff0000; top: 0; display: none; box-shadow: 0 0 15px #ff0000; }
+        .scanning .scan-line { display: block; animation: scan 1.5s infinite; }
+        @keyframes scan { 0% { top: 20%; } 100% { top: 80%; } }
+
+        /* ANA İÇERİK */
+        #content { display: none; padding: 20px; opacity: 0; transition: 1s; }
+        .show { display: block !important; opacity: 1 !important; }
+
+        /* SAYAÇ */
+        .timer { display: flex; justify-content: space-between; background: #111; padding: 15px; border-radius: 15px; border: 1px solid #222; margin: 20px 0; }
+        .t-box { text-align: center; flex: 1; }
+        .t-val { display: block; font-size: 1.2rem; font-weight: bold; color: #ff0000; }
+        .t-lbl { font-size: 0.6rem; color: #777; }
+
+        /* HAVA DURUMU */
+        .head { font-size: 1rem; color: #ff0000; margin: 30px 0 10px; border-left: 3px solid #ff0000; padding-left: 10px; font-weight: bold; }
+        .w-card { background: #111; border-radius: 15px; padding: 20px; position: relative; border: 1px solid #222; }
+        .w-loc { color: #888; font-size: 0.7rem; margin-bottom: 5px; }
+        .w-temp { font-size: 2.2rem; font-weight: bold; }
+        .w-nem { color: #ff0000; font-size: 0.8rem; font-weight: bold; margin-top: 5px; }
+
+        /* PUZZLE (MOBİLDE TAM OTURAN) */
+        .p-grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; width: 280px; height: 360px; margin: 0 auto; }
+        .tile { width: 138px; height: 118px; border: 1px solid #333; border-radius: 5px; background-size: 280px 360px; cursor: pointer; }
+        .selected { border-color: #ff0000; box-shadow: 0 0 10px #ff0000; transform: scale(0.96); }
+
+        /* NEDENLER */
+        .r-card { background: #111; padding: 15px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #222; display: none; animation: fIn 0.5s forwards; }
+        @keyframes fIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+        #win-msg, #final-msg { text-align: center; color: #ff0000; font-weight: bold; margin-top: 20px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="entry">
+        <h2 style="margin-bottom:30px; font-weight:normal; letter-spacing:1px;">DOĞRULAMA</h2>
+        <div class="fp-wrapper" id="fp-btn">
+            <div class="scan-line"></div>
+            <span style="font-size:3rem;">☝️</span>
+        </div>
+        <p style="margin-top:20px; color:#555; font-size:0.8rem;">Parmağını basılı tut...</p>
+    </div>
+
+    <div id="content">
+        <div class="timer">
+            <div class="t-box"><span class="t-val" id="d">00</span><span class="t-lbl">GÜN</span></div>
+            <div class="t-box"><span class="t-val" id="h">00</span><span class="t-lbl">SAAT</span></div>
+            <div class="t-box"><span class="t-val" id="m">00</span><span class="t-lbl">DK</span></div>
+            <div class="t-box"><span class="t-val" id="s">00</span><span class="t-lbl">SN</span></div>
+        </div>
+
+        <p style="text-align:center; font-size:0.85rem; color:#aaa; font-style:italic; line-height:1.4;">
+            "İyi ki seni tanımışım, iyi ki karşılaşmışız, iyi ki seni sevmişim. Dünyalarrrr güzelimmm benimmm seniii çoookk çokkkk çok seviyorummm 🫶🫶"
+        </p>
+
+        <div class="head">HAVA DURUMU</div>
+        <div class="w-card">
+            <div class="w-loc">KONUM: SENİN YANIN</div>
+            <div class="w-temp">1.000.000°C</div>
+            <div class="w-nem">NEM: %100 BÜYÜLENME</div>
+            <div style="position:absolute; right:15px; top:25px; font-size:2.5rem;">🔥</div>
+        </div>
+
+        <div class="head">PUZZLE</div>
+        <div class="p-grid" id="grid"></div>
+        <p id="win-msg">Sen benim hayatımın en güzel parçasısın güzelimmm</p>
+
+        <div class="head">SENİ SEVMEMİN NEDENLERİ</div>
+        <div id="reasons"></div>
+        <p id="final-msg" style="padding-bottom:50px;">
+            Nedenleri tek tek sayıcak olsak seni sevmemin nedenleri bitmez dünyalarrrr güzelimmm benimmm 😍😍
+        </p>
+    </div>
+
+    <script>
+        let hold;
+        const btn = document.getElementById('fp-btn');
+        const entry = document.getElementById('entry');
+
+        // MOBİL UYUMLU BASILI TUTMA
+        const start = (e) => {
+            e.preventDefault();
+            btn.parentElement.classList.add('scanning');
+            hold = setTimeout(() => {
+                entry.style.transform = 'translateY(-100%)';
+                setTimeout(() => {
+                    entry.style.display = 'none';
+                    document.getElementById('content').classList.add('show');
+                    run();
+                }, 600);
+            }, 2000);
+        };
+        const end = () => { clearTimeout(hold); btn.parentElement.classList.remove('scanning'); };
+
+        btn.addEventListener('touchstart', start);
+        btn.addEventListener('touchend', end);
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+
+        function run() {
+            // SAYAÇ
+            const startDate = new Date("September 16, 2024").getTime();
+            setInterval(() => {
+                const diff = new Date().getTime() - startDate;
+                document.getElementById('d').innerText = Math.floor(diff / 86400000);
+                document.getElementById('h').innerText = Math.floor((diff % 86400000) / 3600000);
+                document.getElementById('m').innerText = Math.floor((diff % 3600000) / 60000);
+                document.getElementById('s').innerText = Math.floor((diff % 60000) / 1000);
+            }, 1000);
+
+            // PUZZLE SİSTEMİ
+            const grid = document.getElementById('grid');
+            let tiles = [0,1,2,3,4,5]; // 0-1-2: ben1, 3-4-5: o1
+            tiles.sort(() => Math.random() - 0.5);
+
+            tiles.forEach((id) => {
+                const div = document.createElement('div');
+                div.className = 'tile';
+                div.dataset.id = id;
+                draw(div, id);
+                div.onclick = () => click(div);
+                grid.appendChild(div);
+            });
+
+            // NEDENLER
+            const data = ["Dünyaaalarrrr güzelliğinnn", "Tatluşluuğunnn", "Gülüşünnn", "Senin yanında kendimi çookkk iyi hissetmem...", "Hayatın anlamlı geçmesi", "Tatlış bakışın", "Doğal mükemmelliğin", "Kalbinin saflığı", "Sesini duyup mutlu olmam", "Küçük şeylerle mutlu olman", "İnatçılığın", "Beraber yaptığımız her şey"];
+            data.forEach((txt, i) => {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'r-card';
+                    c.style.display = 'block';
+                    c.innerText = `${i+1}. ${txt}`;
+                    document.getElementById('reasons').appendChild(c);
+                    if(i === 11) document.getElementById('final-msg').style.display = 'block';
+                }, i * 1000);
+            });
+        }
+
+        function draw(el, id) {
+            const isBen = id < 3;
+            const pos = isBen ? id : id - 3;
+            el.style.backgroundImage = `url(${isBen ? 'ben1.jpg' : 'o1.jpg'})`;
+            el.style.backgroundPosition = `0px -${pos * 120}px`;
+        }
+
+        let first = null;
+        function click(el) {
+            if(!first) {
+                first = el;
+                el.classList.add('selected');
+            } else {
+                let id1 = first.dataset.id;
+                let id2 = el.dataset.id;
+                first.dataset.id = id2;
+                el.dataset.id = id1;
+                draw(first, id2);
+                draw(el, id1);
+                first.classList.remove('selected');
+                first = null;
+                check();
+            }
+        }
+
+        function check() {
+            const cur = [...document.querySelectorAll('.tile')].map(t => t.dataset.id).join(',');
+            if(cur === "0,1,2,3,4,5") document.getElementById('win-msg').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
